@@ -1,11 +1,16 @@
 package com.example.LiterAlura.principal;
 
+import com.example.LiterAlura.model.Autor;
 import com.example.LiterAlura.model.DatosLibro;
+import com.example.LiterAlura.model.Libro;
 import com.example.LiterAlura.model.RespuestaGutendex;
+import com.example.LiterAlura.repository.AutorRepository;
+import com.example.LiterAlura.repository.LibroRepository;
 import com.example.LiterAlura.service.ConsumoAPI;
 import com.example.LiterAlura.service.ConvierteDatos;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -14,7 +19,14 @@ public class Principal {
     private ConsumoAPI consumoApi = new ConsumoAPI();
     private final String URL_BASE = "https://gutendex.com/books";
     private ConvierteDatos conversor = new ConvierteDatos();
+    private LibroRepository repositorio;
+    private AutorRepository repositoryAutor;
+    private List<Libro> libros;
 
+    public Principal(LibroRepository repository, AutorRepository repositoryAutor) {
+        this.repositoryAutor = repositoryAutor;
+        this.repositorio = repository;
+    }
 
 
     public void muestraElMenu() throws IOException {
@@ -22,14 +34,8 @@ public class Principal {
         while (opcion != 0) {
             var menu = """
                     1 - Buscar libro
-                    3 - Mostrar libros buscados
-                    4 - Buscar series por titulo
-                    5 - Top 5 mejores series
-                    6 - Buscar Series por categoría
-                    7 - filtrar series por temporadas y evaluación
-                    8 - Buscar episodios por titulo
-                    9 - Top 5 episodios por Serie
-                                  
+                    2 - Mostrar libros buscados
+                    4 - Autores  vivos en un año dado
                     0 - Salir
                     """;
             System.out.println(menu);
@@ -41,8 +47,10 @@ public class Principal {
                     buscarLibroWeb();
                     break;
                 case 2:
+                    mostrarLibrosBuscados();
                     break;
                 case 3:
+                    mostrarAutoresVivosAnio();
                     break;
                 case 4:
                     break;
@@ -70,13 +78,35 @@ public class Principal {
 
     private void buscarLibroWeb() throws IOException {
         List<DatosLibro> libros = getDatosLibro();
-        // Mostrar los libros encontrados
         if (libros != null && !libros.isEmpty()) {
             System.out.println("Libros encontrados:");
-            for (DatosLibro libro : libros) {
-                System.out.println("- " + libro);
-            }
+            DatosLibro primerLibro = libros.get(0);
+            Libro libro = new Libro(primerLibro);
+            repositorio.save(libro);
+            System.out.println("Guardar"+primerLibro);
+
         } else {
             System.out.println("No se encontraron libros con ese nombre.");
-        }    }
+        }
+
+    }
+
+
+    private void mostrarLibrosBuscados() {
+        libros = repositorio.findAll();
+        libros.stream()
+                .forEach(System.out::println);
+    }
+
+    public void mostrarAutoresVivosAnio(){
+        System.out.println("Ingresa el año para buscar los autores vivos");
+        var anio = teclado.nextInt();
+
+        List<Autor> autoresVivos = repositoryAutor.findByAnioNacimientoLessThanEqualAndAnioMuerteGreaterThanEqualOrAnioMuerteIsNull(
+                anio, anio
+        );
+
+        autoresVivos.stream()
+                .forEach(System.out::println);
+    }
 }
